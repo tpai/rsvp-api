@@ -3,6 +3,7 @@ require('dotenv').config();
 const { putItem } = require('./lib/aws');
 const verify = require('./lib/recaptcha');
 const generateResponse = require('./lib/generateResponse');
+const removeEmptyStringElements = require('./lib/removeEmptyStringElements');
 
 const handler = async ({
   body,
@@ -15,7 +16,7 @@ const handler = async ({
       const { response, ...restProps } = JSON.parse(body);
       const { success } = await verify(response);
       if (success) {
-        const json = await putItem(response, restProps);
+        const json = await putItem(response, removeEmptyStringElements(restProps));
         return generateResponse(200, 'success');
       } else {
         return generateResponse(401, 'unauthorized');
