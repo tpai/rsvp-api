@@ -1,6 +1,9 @@
 require('dotenv').config();
 
-const { putItem } = require('./lib/aws');
+const {
+  putItem,
+  getItems,
+} = require('./lib/aws');
 const verify = require('./lib/recaptcha');
 const generateResponse = require('./lib/generateResponse');
 const removeEmptyStringElements = require('./lib/removeEmptyStringElements');
@@ -17,16 +20,25 @@ const handler = async ({
       const { success } = await verify(response);
       if (success) {
         const json = await putItem(response, removeEmptyStringElements(restProps));
-        return generateResponse(200, 'success');
+        return generateResponse(200, { message: 'success' });
       } else {
-        return generateResponse(401, 'unauthorized');
+        return generateResponse(401, { message: 'unauthorized' });
       }
     } catch (err) {
       console.log(err);
-      return generateResponse(400, 'invalid request');
+      return generateResponse(400, { message: 'invalid request' });
     }
   }
-  return generateResponse(404, 'not found');
+  if (httpMethod === 'GET' && path === process.env.API_GATEWAY_RESOURCE) {
+    try {
+      const json = await getItems();
+      return generateResponse(200, json);
+    } catch (err) {
+      console.log(err);
+      return generateResponse(400, { message: 'invalid request' });
+    }
+  }
+  return generateResponse(404, { message: 'not found' });
 };
 
 exports.handler = handler;
